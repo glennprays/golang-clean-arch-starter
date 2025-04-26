@@ -30,3 +30,31 @@ git init
 git add . 
 git commit -m "Initial commit" 
 ```
+
+## Directory Structure Explanation
+Here's a brief overview of the directory structure:
+### `cmd/`
+This directory contains the main application entry points. Each subdirectory represents a different application or service. 
+### `internal/` 
+This directory contains the core business logic and domain entities. It is divided into several subdirectories:
+- `model/` - Contains the domain models. 
+- `repository/` - Contains the repository interfaces and implementations. 
+- `service/` - Contains the business logic and service interfaces. 
+- `usecase/` - Contains the use case interfaces and implementations.
+- `handler/` - Contains the HTTP handlers and controllers. 
+- `middleware/` - Contains the middleware functions.
+- `router/` - Contains the router setup and configuration.
+- `utils/` - Contains utility functions and helpers.
+- `worker/` - Contains the worker and job processing logic.
+- `httperror/` - Contains custom HTTP error handling and responses for http.
+### `pkg/` 
+This directory contains shared libraries and packages that can be used across different applications. 
+### `misc/`
+This directory contains miscellaneous files and configurations, such as Dockerfiles, Makefiles, and other project-related files.
+### `templates/`
+This directory contains static templates.
+### `migrations/`
+This directory contains database migration files.
+### `docs/`
+This directory contains documentation files, in this case, Swagger API documentation.
+
