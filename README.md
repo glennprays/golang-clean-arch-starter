@@ -21,7 +21,7 @@ git clone https://github.com/glennprays/golang-clean-arch-starter.git
 ### Change Golang Module Name [IMPORTANT]
 This step is crucial. The module name in `go.mod` should be changed to match your project name. This is important for proper dependency management and module resolution.
 ```bash
-make rename NEW_MODULE=github.com/yourname/yourproject
+make rename RENAME_MODULE_TO=github.com/yourname/yourproject
 ```
 After renaming, ensure to check the `go.mod` file to confirm the module name has been updated correctly. Then remove git history and reinitialize the repository (optional): 
 ```bash 
