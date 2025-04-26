@@ -1,0 +1,7 @@
+openapi: 3.1.0
+info:
+  title: Example Golang Clean Architecture API 
+  version: 1.0.0
+  description: API  for a Golang Clean Architecture example
+servers:
+  - url: /api/v1
