@@ -58,3 +58,31 @@ This directory contains database migration files.
 ### `docs/`
 This directory contains documentation files, in this case, Swagger API documentation.
 
+
+## Example implementations... 
+### Example running development mode 
+Development mode is running PostgreSQL database and Swagger API documentation using Docker containers.
+To run the development mode, use the following command:
+```bash
+make run-dev
+```
+To stop the development mode, use:
+```bash
+make stop-dev
+```
+
+### Example updating swagger documentation
+If you updated the swagger documentation, you need to refresh the Swagger UI. You can do this by running:
+```bash
+make swagger
+```
+To access the Swagger UI, open your browser and go to:
+``` 
+http://localhost:8080/
+```
+
+### Example running code in development mode
+To run the code in development mode, use the following command:
+```bash
+go run cmd/api/main.go
+```

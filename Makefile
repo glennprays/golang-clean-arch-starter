@@ -17,3 +17,15 @@ rename:
 		find . -type f -name '*.go' -exec sed -i "s|$(RENAME_MODULE_FROM)|$(RENAME_MODULE_TO)|g" {} +; \
 	fi
 	go mod tidy
+
+run-dev:
+	@echo "Starting all Docker containers for development mode..."
+	@sh docker-dev up -d
+
+stop-dev:
+	@echo "Stopping all Docker containers..."
+	@sh docker-dev down
+
+swagger:
+	@echo "Restarting Swagger UI..."
+	@sh docker-dev restart swagger-ui
