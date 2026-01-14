@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/glennprays/golang-clean-arch-starter/internal/domain"
+	"github.com/glennprays/golang-clean-arch-starter/domain"
 )
 
 type APIError struct {

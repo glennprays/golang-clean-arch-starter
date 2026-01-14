@@ -7,20 +7,24 @@
 package infrastructure
 
 import (
-	"github.com/glennprays/golang-clean-arch-starter/internal/config"
+	"github.com/glennprays/golang-clean-arch-starter/config"
 	"github.com/glennprays/golang-clean-arch-starter/internal/handler"
+	"github.com/glennprays/golang-clean-arch-starter/internal/router"
 )
 
-// InitializeApp creates a new App with all dependencies wired up.
+// Injectors from wire.go:
+
 func InitializeApp() (*App, error) {
 	configConfig, err := config.Load()
 	if err != nil {
 		return nil, err
 	}
 	healthHandler := handler.NewHealthHandler()
+	routerRouter := router.NewRouter(healthHandler)
 	app := &App{
 		Config:        configConfig,
 		HealthHandler: healthHandler,
+		Router:        routerRouter,
 	}
 	return app, nil
 }
