@@ -29,3 +29,6 @@ stop-dev:
 swagger:
 	@echo "Restarting Swagger UI..."
 	@sh docker-dev restart swagger-ui
+
+run:
+	@go run cmd/api/main.go
