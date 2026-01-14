@@ -30,5 +30,9 @@ swagger:
 	@echo "Restarting Swagger UI..."
 	@sh docker-dev restart swagger-ui
 
+generate:
+	@echo "Generating Wire dependencies..."
+	@go generate ./internal/infrastructure/...
+
 run:
 	@go run cmd/api/main.go
