@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/glennprays/golang-clean-arch-starter/internal/app/model"
+	"github.com/glennprays/golang-clean-arch-starter/internal/domain"
 )
 
 type APIError struct {
@@ -14,23 +14,23 @@ type APIError struct {
 
 func FromError(err error) APIError {
 	var apiError APIError
-	var svcError model.Error
+	var domainError domain.Error
 
-	if errors.As(err, &svcError) {
-		apiError.Message = svcError.AppError().Error()
-		svcErr := svcError.ServiceError()
+	if errors.As(err, &domainError) {
+		apiError.Message = domainError.AppError().Error()
+		svcErr := domainError.ServiceError()
 		switch svcErr {
-		case model.ErrBadRequest:
+		case domain.ErrBadRequest:
 			apiError.Status = http.StatusBadRequest
-		case model.ErrInternalFailure:
+		case domain.ErrInternalFailure:
 			apiError.Status = http.StatusInternalServerError
-		case model.ErrNotFound:
+		case domain.ErrNotFound:
 			apiError.Status = http.StatusNotFound
-		case model.ErrUnauthorized:
+		case domain.ErrUnauthorized:
 			apiError.Status = http.StatusUnauthorized
-		case model.ErrForbidden:
+		case domain.ErrForbidden:
 			apiError.Status = http.StatusForbidden
-		case model.ErrConflict:
+		case domain.ErrConflict:
 			apiError.Status = http.StatusConflict
 		}
 	}
