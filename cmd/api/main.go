@@ -37,7 +37,7 @@ func main() {
 	app.Router.Setup(fiberApp)
 
 	// Start server in goroutine
-	addr := fmt.Sprintf(":%s", app.Config.AppPort)
+	addr := fmt.Sprintf(":%d", app.Config.AppPort)
 	go func() {
 		log.Printf("Starting server on %s", addr)
 		if err := fiberApp.Listen(addr); err != nil {
