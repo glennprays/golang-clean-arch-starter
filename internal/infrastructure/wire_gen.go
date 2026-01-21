@@ -10,6 +10,8 @@ import (
 	"github.com/glennprays/golang-clean-arch-starter/config"
 	"github.com/glennprays/golang-clean-arch-starter/internal/handler"
 	"github.com/glennprays/golang-clean-arch-starter/internal/router"
+	"github.com/glennprays/golang-clean-arch-starter/pkg/logger"
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
@@ -19,12 +21,19 @@ func InitializeApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	logLogger := logger.ProviderLogger(configConfig)
 	healthHandler := handler.NewHealthHandler()
-	routerRouter := router.NewRouter(healthHandler)
+	routerRouter := router.NewRouter(logLogger, healthHandler)
 	app := &App{
-		Config:        configConfig,
-		HealthHandler: healthHandler,
-		Router:        routerRouter,
+		Config: configConfig,
+		Logger: logLogger,
+		Router: routerRouter,
 	}
 	return app, nil
 }
+
+// wire.go:
+
+var CoreSet = wire.NewSet(config.Load, logger.ProviderLogger)
+
+var ApiSet = wire.NewSet(handler.NewHealthHandler, router.NewRouter)

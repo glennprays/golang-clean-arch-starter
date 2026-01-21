@@ -3,15 +3,22 @@ package router
 import (
 	"github.com/glennprays/golang-clean-arch-starter/internal/handler"
 	"github.com/glennprays/golang-clean-arch-starter/internal/middleware"
+	"github.com/glennprays/log"
 	"github.com/gofiber/fiber/v2"
 )
 
 type Router struct {
+	logger        *log.Logger
 	HealthHandler *handler.HealthHandler
 }
 
-func NewRouter(healthHandler *handler.HealthHandler) *Router {
+func NewRouter(
+	logger *log.Logger,
+	healthHandler *handler.HealthHandler,
+) *Router {
+	routerLogger := logger.With(log.String("component", "router"))
 	return &Router{
+		logger:        routerLogger,
 		HealthHandler: healthHandler,
 	}
 }
@@ -19,8 +26,10 @@ func NewRouter(healthHandler *handler.HealthHandler) *Router {
 // Setup configures all application routes
 func (r *Router) Setup(app *fiber.App) {
 	// Global middleware
-	app.Use(middleware.RequestID())
+	app.Use(middleware.TraceID())
 	app.Use(middleware.CORS())
+
+	app.Use(middleware.NewHTTPLogger(r.logger))
 
 	// API v1 group
 	v1 := app.Group("/api/v1")

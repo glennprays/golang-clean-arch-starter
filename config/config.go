@@ -11,9 +11,12 @@ import (
 )
 
 type Config struct {
-	Env     string `mapstructure:"ENV"`
-	AppName string `mapstructure:"APP_NAME" default:"golang-clean-architecture"`
-	AppPort int    `mapstructure:"APP_PORT" default:"3000"`
+	Env     Environment `mapstructure:"ENV" default:"development"`
+	AppName string      `mapstructure:"APP_NAME" default:"golang-clean-architecture"`
+	AppPort int         `mapstructure:"APP_PORT" default:"3000"`
+
+	LogLevel  string `mapstructure:"LOG_LEVEL" default:"debug"`
+	LogOutput string `mapstructure:"LOG_OUTPUT" default:"stdout"`
 
 	DBHost     string `mapstructure:"DB_HOST" default:"localhost"`
 	DBPort     int    `mapstructure:"DB_PORT" default:"5432"`
@@ -30,6 +33,10 @@ const (
 	PROD    Environment = "production"
 )
 
+func (e Environment) String() string {
+	return string(e)
+}
+
 func Load() (*Config, error) {
 	// Create config instance
 	cfg := &Config{}
@@ -39,7 +46,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	envStr := strings.ToLower(os.Getenv("APP_ENV"))
+	envStr := strings.ToLower(os.Getenv("ENV"))
 	env := Environment(envStr)
 	if env == "" {
 		env = DEV
@@ -60,7 +67,10 @@ func Load() (*Config, error) {
 		field := t.Field(i)
 		key := field.Tag.Get("mapstructure")
 		if key != "" {
-			viper.BindEnv(key)
+			err := viper.BindEnv(key)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
