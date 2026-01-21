@@ -32,7 +32,7 @@ swagger:
 
 generate:
 	@echo "Generating Wire dependencies..."
-	@go generate ./internal/infrastructure/...
+	@wire gen ./internal/infrastructure/...
 
 run:
 	@go run cmd/api/main.go
