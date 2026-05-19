@@ -11,8 +11,25 @@ import (
 // so 5xx and unmatched errors are recorded with the request's trace_id
 // before the response is written — without that, production 500s would
 // reach the client with no trace in the logs of what actually failed.
+//
+// ErrorHandler also emits the per-request "http request" log line on
+// the error path (NewHTTPLogger handles the success path). Splitting
+// the responsibility this way means each path logs the *actual* status
+// that ended up on the wire.
 func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
-	l := logger.With(log.String("component", "error_handler"))
+	errLog := logger.With(log.String("component", "error_handler"))
+	// reqLog matches NewHTTPLogger's tagging so success and error
+	// request lines share the same component value.
+	reqLog := logger.With(log.String("component", "router"))
+
+	writeError := func(c *fiber.Ctx, status int, traceID string, body *httperror.ErrorBody) error {
+		result := c.Status(status).JSON(httperror.Envelope{
+			Error:   body,
+			TraceID: traceID,
+		})
+		logHTTPRequest(reqLog, c, traceID, status, requestLatency(c))
+		return result
+	}
 
 	return func(c *fiber.Ctx, err error) error {
 		traceID := GetTraceID(c)
@@ -25,7 +42,7 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 				if ae.Cause != nil {
 					cause = ae.Cause.Error()
 				}
-				l.Error(traceID, "internal app error", map[string]any{
+				errLog.Error(traceID, "internal app error", map[string]any{
 					"kind":   string(ae.Kind),
 					"msg":    ae.Message,
 					"cause":  cause,
@@ -51,7 +68,7 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 		}
 
 		// 3. Unknown error — log everything, expose nothing.
-		l.Error(traceID, "unhandled error reached global handler", map[string]any{
+		errLog.Error(traceID, "unhandled error reached global handler", map[string]any{
 			"error":  err.Error(),
 			"method": c.Method(),
 			"path":   c.Path(),
@@ -61,13 +78,6 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 			Message: "internal server error",
 		})
 	}
-}
-
-func writeError(c *fiber.Ctx, status int, traceID string, body *httperror.ErrorBody) error {
-	return c.Status(status).JSON(httperror.Envelope{
-		Error:   body,
-		TraceID: traceID,
-	})
 }
 
 func fiberKind(code int) apperror.Kind {
