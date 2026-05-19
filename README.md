@@ -327,9 +327,15 @@ A GitHub Actions workflow at `.github/workflows/ci.yml` runs `go build`,
 
 ## API endpoints
 
-| Method | Path               | Notes                              |
-| ------ | ------------------ | ---------------------------------- |
-| GET    | `/api/v1/health`   | Liveness check; returns the unified envelope with `status` and `timestamp`. |
+| Method | Path                 | Notes                                                                            |
+| ------ | -------------------- | -------------------------------------------------------------------------------- |
+| GET    | `/api/v1/health`     | Liveness check; returns `status` and `timestamp` in the unified envelope.        |
+| GET    | `/api/v1/version`    | Build metadata: `version`, `commit`, `build_time` (embedded via `-ldflags`).     |
+| GET    | `/debug/pprof/*`     | Standard Go profiling endpoints. Mounted **only when `ENV != production`**.     |
+
+Build metadata is populated by `make build` (or `docker build`), which passes
+`VERSION`, `COMMIT`, and `BUILD_TIME` through `-ldflags`. `go run` / `make run`
+leaves the defaults (`"dev"` / `"unknown"`) which is fine for local work.
 
 Add new routes in `internal/router/router.go` — the `setupHealthRoutes`
 function is the template.

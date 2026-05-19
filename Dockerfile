@@ -14,8 +14,19 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/main ./cmd/api/main.go
+# Build metadata, passed in by the CI workflow / local `docker build`.
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
+
+# Build the Go application with version info baked in via -ldflags.
+# -s -w strips DWARF/symbol tables for a smaller production binary.
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags "-s -w \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Version=${VERSION} \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Commit=${COMMIT} \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.BuildTime=${BUILD_TIME}" \
+    -o /app/main ./cmd/api/main.go
 
 # Stage 2: Prepare CA certificates and timezone data
 FROM debian:bullseye-slim AS certs-and-tzdata

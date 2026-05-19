@@ -26,7 +26,8 @@ func InitializeApp() (*App, error) {
 		return nil, err
 	}
 	healthHandler := handler.NewHealthHandler()
-	routerRouter := router.NewRouter(configConfig, logLogger, healthHandler)
+	versionHandler := handler.NewVersionHandler()
+	routerRouter := router.NewRouter(configConfig, logLogger, healthHandler, versionHandler)
 	app := &App{
 		Config: configConfig,
 		Logger: logLogger,
@@ -39,4 +40,4 @@ func InitializeApp() (*App, error) {
 
 var CoreSet = wire.NewSet(config.Load, logger.ProviderLogger)
 
-var ApiSet = wire.NewSet(handler.NewHealthHandler, router.NewRouter)
+var ApiSet = wire.NewSet(handler.NewHealthHandler, handler.NewVersionHandler, router.NewRouter)

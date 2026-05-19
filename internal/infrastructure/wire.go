@@ -19,6 +19,7 @@ var CoreSet = wire.NewSet(
 
 var ApiSet = wire.NewSet(
 	handler.NewHealthHandler,
+	handler.NewVersionHandler,
 	router.NewRouter,
 )
 
