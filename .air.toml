@@ -1,0 +1,23 @@
+# Hot reload for development.
+# Run with: make dev
+# Docs:     https://github.com/air-verse/air
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ./cmd/api"
+  delay = 200
+  include_ext = ["go", "tpl", "tmpl", "html", "env"]
+  exclude_dir = ["tmp", "vendor", "testdata", "misc", "docs", ".git", ".github"]
+  exclude_regex = ["_test\\.go"]
+  kill_delay = "500ms"
+  log = "build-errors.log"
+  stop_on_error = false
+
+[log]
+  main_only = false
+  time = true
+
+[misc]
+  clean_on_exit = true

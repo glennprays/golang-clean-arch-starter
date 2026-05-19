@@ -1,0 +1,21 @@
+# Pre-commit hooks. Install with: make hooks
+# Skip ad hoc with: git commit --no-verify
+# Docs: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    test:
+      run: go test ./... -short -count=1
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --new-from-rev=origin/main ./...
+    fmt:
+      glob: "*.go"
+      run: |
+        bad=$(gofmt -l {staged_files} 2>/dev/null)
+        if [ -n "$bad" ]; then
+          echo "gofmt: the following files need formatting:" >&2
+          echo "$bad" >&2
+          exit 1
+        fi

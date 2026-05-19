@@ -87,7 +87,8 @@ being present. See [Configuration](#configuration).
 
 ```bash
 make run-dev   # starts Postgres + Swagger UI in Docker
-make run       # runs the API on $APP_PORT (default 3000)
+make run       # runs the API once on $APP_PORT (default 3000)
+make dev       # runs the API with hot reload via air (recompiles on file save)
 ```
 
 Hit it:
@@ -297,6 +298,7 @@ almost always a misconfiguration in prod.
 
 ```bash
 make run          # go run cmd/api/main.go
+make dev          # hot reload via air (recompiles on save)
 make run-dev      # docker compose: Postgres (5432) + Swagger UI (8080)
 make stop-dev     # tear those down
 make swagger      # restart the Swagger UI container after editing docs/
@@ -304,10 +306,22 @@ make swagger      # restart the Swagger UI container after editing docs/
 make test         # go test ./... -race -count=1
 make lint         # golangci-lint run ./...   (requires golangci-lint built on Go 1.25+)
 make tidy         # go mod tidy
+make hooks        # install pre-commit hooks via lefthook (one-time setup)
 
 make generate     # wire gen ./internal/infrastructure/...   (after editing wire.go)
 make rename RENAME_MODULE_TO=github.com/you/proj
 ```
+
+`make dev` requires [`air`](https://github.com/air-verse/air); `make hooks`
+requires [`lefthook`](https://github.com/evilmartians/lefthook). Install both:
+
+```bash
+go install github.com/air-verse/air@latest
+go install github.com/evilmartians/lefthook@latest
+```
+
+A GitHub Actions workflow at `.github/workflows/ci.yml` runs `go build`,
+`go vet`, `make test`, `golangci-lint`, and `docker build` on every PR.
 
 ---
 

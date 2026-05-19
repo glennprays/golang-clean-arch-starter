@@ -37,6 +37,12 @@ generate:
 run:
 	@go run cmd/api/main.go
 
+dev:
+	@air -c .air.toml
+
+hooks:
+	@lefthook install
+
 test:
 	@go test ./... -race -count=1
 
