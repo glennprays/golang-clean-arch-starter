@@ -1,0 +1,22 @@
+# Editor settings for consistency across IDEs.
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Go uses tabs by convention; gofmt enforces this.
+[*.go]
+indent_style = tab
+
+# Config / docs / templates use spaces.
+[*.{md,yaml,yml,toml,json}]
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
