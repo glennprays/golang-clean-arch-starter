@@ -25,6 +25,10 @@ type Config struct {
 	DBUser     string `mapstructure:"DB_USER" default:"postgres" validate:"required"`
 	DBPassword string `mapstructure:"DB_PASSWORD" validate:"required"`
 	DBName     string `mapstructure:"DB_NAME" validate:"required"`
+
+	// Comma-separated list of allowed origins for CORS. Default "*"
+	// is fine in dev; production refuses to boot with that value.
+	CorsAllowedOrigins string `mapstructure:"CORS_ALLOWED_ORIGINS" default:"*" validate:"required"`
 }
 
 type Environment string
@@ -84,6 +88,12 @@ func Load() (*Config, error) {
 	// missing DB_PASSWORD / DB_NAME at boot rather than at first query.
 	if err := validator.New().Struct(cfg); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	// Production must explicitly enumerate origins — a wildcard there
+	// is almost always a mistake.
+	if cfg.Env == PROD && cfg.CorsAllowedOrigins == "*" {
+		return nil, fmt.Errorf("invalid configuration: CORS_ALLOWED_ORIGINS must be set to specific origins in production, got %q", cfg.CorsAllowedOrigins)
 	}
 
 	return cfg, nil

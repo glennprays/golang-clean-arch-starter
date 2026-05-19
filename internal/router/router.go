@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/glennprays/golang-clean-arch-starter/config"
 	"github.com/glennprays/golang-clean-arch-starter/internal/handler"
 	"github.com/glennprays/golang-clean-arch-starter/internal/middleware"
 	"github.com/glennprays/log"
@@ -10,16 +11,19 @@ import (
 
 type Router struct {
 	logger        *log.Logger
+	config        *config.Config
 	HealthHandler *handler.HealthHandler
 }
 
 func NewRouter(
+	cfg *config.Config,
 	logger *log.Logger,
 	healthHandler *handler.HealthHandler,
 ) *Router {
 	routerLogger := logger.With(log.String("component", "router"))
 	return &Router{
 		logger:        routerLogger,
+		config:        cfg,
 		HealthHandler: healthHandler,
 	}
 }
@@ -31,7 +35,7 @@ func (r *Router) Setup(app *fiber.App) {
 	// trace_id in the logs.
 	app.Use(middleware.TraceID())
 	app.Use(recover.New())
-	app.Use(middleware.CORS())
+	app.Use(middleware.CORS(r.config.CorsAllowedOrigins))
 
 	app.Use(middleware.NewHTTPLogger(r.logger))
 
