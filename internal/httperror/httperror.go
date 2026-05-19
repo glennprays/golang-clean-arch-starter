@@ -1,38 +1,33 @@
+// Package httperror defines the JSON contract for error responses.
+//
+// All error responses share the same shape regardless of source:
+//
+//	{
+//	  "error": {
+//	    "code":     "NOT_FOUND",
+//	    "message":  "user 42 not found",
+//	    "trace_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+//	    "details":  [ { "field": "...", "rule": "...", "message": "..." } ]
+//	  }
+//	}
+//
+// `code` is machine-readable (apperror.Kind). `message` is safe to show
+// users. `trace_id` lets support correlate a report with server logs.
+// `details` is omitted when empty and used for field-level validation.
 package httperror
 
-import (
-	"errors"
-	"net/http"
+import "github.com/glennprays/golang-clean-arch-starter/internal/apperror"
 
-	"github.com/glennprays/golang-clean-arch-starter/domain"
-)
-
-type APIError struct {
-	Status  int
-	Message string
+// ErrorResponse is the top-level wrapper. The single-key envelope makes
+// it easy to distinguish from any success body.
+type ErrorResponse struct {
+	Error ErrorBody `json:"error"`
 }
 
-func FromError(err error) APIError {
-	var apiError APIError
-	var domainError domain.Error
-
-	if errors.As(err, &domainError) {
-		apiError.Message = domainError.Error()
-		switch domainError.ServiceError() {
-		case domain.ErrBadRequest:
-			apiError.Status = http.StatusBadRequest
-		case domain.ErrNotFound:
-			apiError.Status = http.StatusNotFound
-		case domain.ErrUnauthorized:
-			apiError.Status = http.StatusUnauthorized
-		case domain.ErrForbidden:
-			apiError.Status = http.StatusForbidden
-		case domain.ErrConflict:
-			apiError.Status = http.StatusConflict
-		default:
-			apiError.Status = http.StatusInternalServerError
-		}
-	}
-
-	return apiError
+// ErrorBody describes one error.
+type ErrorBody struct {
+	Code    apperror.Kind         `json:"code"`
+	Message string                `json:"message"`
+	TraceID string                `json:"trace_id"`
+	Details []apperror.FieldError `json:"details,omitempty"`
 }
