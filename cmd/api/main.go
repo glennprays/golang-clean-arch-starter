@@ -29,11 +29,18 @@ func main() {
 
 	logger := app.Logger.With(log.String("component", "main"))
 
-	// Create Fiber app with custom error handler
+	// Create Fiber app with custom error handler and explicit limits.
+	// Defaults (15s/15s read/write, 4 MiB body) are not appropriate for
+	// production — slow clients can tie up connections and large bodies
+	// reach handlers without backpressure.
 	fiberApp := fiber.New(fiber.Config{
 		AppName:               app.Config.AppName,
 		ErrorHandler:          middleware.ErrorHandler(app.Logger),
 		DisableStartupMessage: true,
+		ReadTimeout:           10 * time.Second,
+		WriteTimeout:          10 * time.Second,
+		IdleTimeout:           120 * time.Second,
+		BodyLimit:             1 << 20, // 1 MiB
 	})
 
 	// Setup routes (includes global middleware in correct order)
