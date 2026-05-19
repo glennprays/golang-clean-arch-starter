@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,7 +47,7 @@ func main() {
 			"app_name": app.Config.AppName,
 			"pid":      os.Getpid(),
 		})
-		if err := fiberApp.Listen(addr); err != nil {
+		if err := fiberApp.Listen(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal(lifecycleID, "Failed to start server", map[string]any{
 				"error": err.Error(),
 			})
