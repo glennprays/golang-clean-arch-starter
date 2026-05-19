@@ -21,7 +21,10 @@ func InitializeApp() (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	logLogger := logger.ProviderLogger(configConfig)
+	logLogger, err := logger.ProviderLogger(configConfig)
+	if err != nil {
+		return nil, err
+	}
 	healthHandler := handler.NewHealthHandler()
 	routerRouter := router.NewRouter(logLogger, healthHandler)
 	app := &App{
