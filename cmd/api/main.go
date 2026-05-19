@@ -30,7 +30,7 @@ func main() {
 	// Create Fiber app with custom error handler
 	fiberApp := fiber.New(fiber.Config{
 		AppName:               app.Config.AppName,
-		ErrorHandler:          middleware.ErrorHandler(),
+		ErrorHandler:          middleware.ErrorHandler(app.Logger),
 		DisableStartupMessage: true,
 	})
 
