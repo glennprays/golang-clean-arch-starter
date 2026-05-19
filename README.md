@@ -249,6 +249,33 @@ func (h *UserHandler) Get(c *fiber.Ctx) error {
 }
 ```
 
+### Returning paginated lists
+
+`OKPaginated` carries both the items and the pagination metadata in
+the same envelope. The `Page` struct supports two schemes — pick one
+per endpoint:
+
+```go
+// Cursor (Stripe-shaped):
+return httperror.OKPaginated(c, users, httperror.Page{
+    NextCursor: nextID,
+})
+
+// Offset (classic):
+return httperror.OKPaginated(c, users, httperror.Page{
+    Page: 2, PageSize: 20, Total: 137,
+})
+```
+
+Response:
+```json
+{
+  "data": [ { "...": "..." } ],
+  "page": { "next_cursor": "user_abc123" },
+  "trace_id": "f47ac10b-..."
+}
+```
+
 ### Logging with trace IDs
 
 The `TraceID` middleware generates (or validates and reuses) a UUID per
@@ -267,6 +294,27 @@ func (s *UserService) Refresh(ctx context.Context) error {
 Every request emits exactly one structured `"http request"` log line — from
 the HTTP-logger middleware on success, from the global error handler on
 errors — both reporting the actual response status that went out on the wire.
+
+### Testing handlers
+
+`internal/testkit.NewTestApp` builds a Fiber app with the production
+middleware stack (TraceID, ErrorHandler) and a quiet logger. Pass a
+register callback to mount the routes under test:
+
+```go
+func TestHealthHandler(t *testing.T) {
+    h := handler.NewHealthHandler()
+    app := testkit.NewTestApp(t, func(app *fiber.App) {
+        app.Get("/health", h.Check)
+    })
+
+    resp, _ := app.Test(httptest.NewRequest(http.MethodGet, "/health", nil))
+    // assert status, X-Trace-Id header, JSON envelope...
+}
+```
+
+See `internal/handler/health_test.go` for a worked example that asserts
+both the envelope shape and that `trace_id` matches between header and body.
 
 ---
 

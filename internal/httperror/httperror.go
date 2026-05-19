@@ -23,9 +23,11 @@ import (
 )
 
 // Envelope is the top-level JSON shape returned by every handler.
+// `Page` is populated only for paginated list responses (see Page docs).
 type Envelope struct {
 	Data    any        `json:"data,omitempty"`
 	Error   *ErrorBody `json:"error,omitempty"`
+	Page    *Page      `json:"page,omitempty"`
 	TraceID string     `json:"trace_id"`
 }
 
@@ -36,11 +38,37 @@ type ErrorBody struct {
 	Details []apperror.FieldError `json:"details,omitempty"`
 }
 
+// Page carries pagination metadata for a list response. Only the
+// fields relevant to the chosen scheme are populated.
+//
+//   - Cursor (Stripe-shaped): use NextCursor / PrevCursor.
+//   - Offset (classic):       use Page / PageSize / Total.
+//
+// The Envelope's `page` field is omitted entirely when no Page is set.
+type Page struct {
+	NextCursor string `json:"next_cursor,omitempty"`
+	PrevCursor string `json:"prev_cursor,omitempty"`
+
+	Page     int   `json:"page,omitempty"`
+	PageSize int   `json:"page_size,omitempty"`
+	Total    int64 `json:"total,omitempty"`
+}
+
 // OK writes a 200 success envelope wrapping the given payload. Use
 // this from handlers so the response shape stays consistent.
 func OK(c *fiber.Ctx, data any) error {
 	return c.JSON(Envelope{
 		Data:    data,
+		TraceID: logctx.TraceID(c.UserContext()),
+	})
+}
+
+// OKPaginated writes a 200 success envelope wrapping a list payload
+// along with pagination metadata.
+func OKPaginated(c *fiber.Ctx, data any, page Page) error {
+	return c.JSON(Envelope{
+		Data:    data,
+		Page:    &page,
 		TraceID: logctx.TraceID(c.UserContext()),
 	})
 }
