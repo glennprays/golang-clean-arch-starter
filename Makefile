@@ -36,3 +36,12 @@ generate:
 
 run:
 	@go run cmd/api/main.go
+
+test:
+	@go test ./... -race -count=1
+
+lint:
+	@golangci-lint run ./...
+
+tidy:
+	@go mod tidy
