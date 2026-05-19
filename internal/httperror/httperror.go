@@ -17,13 +17,10 @@ func FromError(err error) APIError {
 	var domainError domain.Error
 
 	if errors.As(err, &domainError) {
-		apiError.Message = domainError.AppError().Error()
-		svcErr := domainError.ServiceError()
-		switch svcErr {
+		apiError.Message = domainError.Error()
+		switch domainError.ServiceError() {
 		case domain.ErrBadRequest:
 			apiError.Status = http.StatusBadRequest
-		case domain.ErrInternalFailure:
-			apiError.Status = http.StatusInternalServerError
 		case domain.ErrNotFound:
 			apiError.Status = http.StatusNotFound
 		case domain.ErrUnauthorized:
@@ -32,6 +29,8 @@ func FromError(err error) APIError {
 			apiError.Status = http.StatusForbidden
 		case domain.ErrConflict:
 			apiError.Status = http.StatusConflict
+		default:
+			apiError.Status = http.StatusInternalServerError
 		}
 	}
 
