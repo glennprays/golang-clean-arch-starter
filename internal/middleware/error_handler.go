@@ -33,10 +33,9 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 					"path":   c.Path(),
 				})
 			}
-			return writeError(c, status, httperror.ErrorBody{
+			return writeError(c, status, traceID, &httperror.ErrorBody{
 				Code:    ae.Kind,
 				Message: ae.Message,
-				TraceID: traceID,
 				Details: ae.Details,
 			})
 		}
@@ -45,10 +44,9 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 		// translate the status to a Kind so the response shape stays
 		// consistent.
 		if fe, ok := err.(*fiber.Error); ok {
-			return writeError(c, fe.Code, httperror.ErrorBody{
+			return writeError(c, fe.Code, traceID, &httperror.ErrorBody{
 				Code:    fiberKind(fe.Code),
 				Message: fe.Message,
-				TraceID: traceID,
 			})
 		}
 
@@ -58,16 +56,18 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 			"method": c.Method(),
 			"path":   c.Path(),
 		})
-		return writeError(c, fiber.StatusInternalServerError, httperror.ErrorBody{
+		return writeError(c, fiber.StatusInternalServerError, traceID, &httperror.ErrorBody{
 			Code:    apperror.KindInternal,
 			Message: "internal server error",
-			TraceID: traceID,
 		})
 	}
 }
 
-func writeError(c *fiber.Ctx, status int, body httperror.ErrorBody) error {
-	return c.Status(status).JSON(httperror.ErrorResponse{Error: body})
+func writeError(c *fiber.Ctx, status int, traceID string, body *httperror.ErrorBody) error {
+	return c.Status(status).JSON(httperror.Envelope{
+		Error:   body,
+		TraceID: traceID,
+	})
 }
 
 func fiberKind(code int) apperror.Kind {

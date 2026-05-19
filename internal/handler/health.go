@@ -3,6 +3,7 @@ package handler
 import (
 	"time"
 
+	"github.com/glennprays/golang-clean-arch-starter/internal/httperror"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -18,7 +19,7 @@ type HealthResponse struct {
 }
 
 func (h *HealthHandler) Check(c *fiber.Ctx) error {
-	return c.JSON(HealthResponse{
+	return httperror.OK(c, HealthResponse{
 		Status:    "ok",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	})

@@ -1,33 +1,46 @@
-// Package httperror defines the JSON contract for error responses.
+// Package httperror defines the JSON contract for HTTP responses.
 //
-// All error responses share the same shape regardless of source:
+// Every response (success or error) uses the same Envelope:
 //
-//	{
-//	  "error": {
-//	    "code":     "NOT_FOUND",
-//	    "message":  "user 42 not found",
-//	    "trace_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-//	    "details":  [ { "field": "...", "rule": "...", "message": "..." } ]
-//	  }
-//	}
+//	// Success
+//	{ "data": { ... }, "trace_id": "f47ac10b-..." }
 //
-// `code` is machine-readable (apperror.Kind). `message` is safe to show
-// users. `trace_id` lets support correlate a report with server logs.
-// `details` is omitted when empty and used for field-level validation.
+//	// Error
+//	{ "error": { "code": "NOT_FOUND", "message": "...", "details": [...] },
+//	  "trace_id": "f47ac10b-..." }
+//
+// Exactly one of `data` and `error` is populated; `trace_id` is always
+// present so support can correlate a response with server logs.
+//
+// The package is named httperror for historical reasons — it owns
+// both the success and error shapes now.
 package httperror
 
-import "github.com/glennprays/golang-clean-arch-starter/internal/apperror"
+import (
+	"github.com/glennprays/golang-clean-arch-starter/internal/apperror"
+	"github.com/glennprays/golang-clean-arch-starter/pkg/logctx"
+	"github.com/gofiber/fiber/v2"
+)
 
-// ErrorResponse is the top-level wrapper. The single-key envelope makes
-// it easy to distinguish from any success body.
-type ErrorResponse struct {
-	Error ErrorBody `json:"error"`
+// Envelope is the top-level JSON shape returned by every handler.
+type Envelope struct {
+	Data    any        `json:"data,omitempty"`
+	Error   *ErrorBody `json:"error,omitempty"`
+	TraceID string     `json:"trace_id"`
 }
 
-// ErrorBody describes one error.
+// ErrorBody describes one error in the envelope.
 type ErrorBody struct {
 	Code    apperror.Kind         `json:"code"`
 	Message string                `json:"message"`
-	TraceID string                `json:"trace_id"`
 	Details []apperror.FieldError `json:"details,omitempty"`
+}
+
+// OK writes a 200 success envelope wrapping the given payload. Use
+// this from handlers so the response shape stays consistent.
+func OK(c *fiber.Ctx, data any) error {
+	return c.JSON(Envelope{
+		Data:    data,
+		TraceID: logctx.TraceID(c.UserContext()),
+	})
 }
