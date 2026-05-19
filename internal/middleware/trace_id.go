@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/glennprays/golang-clean-arch-starter/pkg/logctx"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -20,6 +21,10 @@ func TraceID() fiber.Handler {
 
 		c.Locals(TraceIDContextKey, traceID)
 		c.Set(TraceIDHeader, traceID)
+		// Also thread the trace ID through context.Context so usecases,
+		// services, and repositories below the handler can log with it
+		// via logctx.TraceID(ctx).
+		c.SetUserContext(logctx.WithTraceID(c.UserContext(), traceID))
 
 		return c.Next()
 	}
