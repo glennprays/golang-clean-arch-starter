@@ -68,10 +68,10 @@ func main() {
 	if app.Config.Env == config.DEV {
 		timeoutSeconds = 0 // No timeout in dev for easier debugging
 	}
-	_, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
 	defer cancel()
 
-	if err := fiberApp.Shutdown(); err != nil {
+	if err := fiberApp.ShutdownWithContext(ctx); err != nil {
 		logger.Fatal(lifecycleID, "Server forced to shutdown", map[string]any{
 			"error": err.Error(),
 		})
