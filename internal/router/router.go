@@ -5,6 +5,7 @@ import (
 	"github.com/glennprays/golang-clean-arch-starter/internal/middleware"
 	"github.com/glennprays/log"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 type Router struct {
@@ -25,8 +26,11 @@ func NewRouter(
 
 // Setup configures all application routes
 func (r *Router) Setup(app *fiber.App) {
-	// Global middleware
+	// Global middleware. TraceID must run before recover so that any
+	// panic surfaced by the recovery middleware can be correlated by
+	// trace_id in the logs.
 	app.Use(middleware.TraceID())
+	app.Use(recover.New())
 	app.Use(middleware.CORS())
 
 	app.Use(middleware.NewHTTPLogger(r.logger))

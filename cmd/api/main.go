@@ -13,7 +13,6 @@ import (
 	"github.com/glennprays/golang-clean-arch-starter/internal/middleware"
 	"github.com/glennprays/log"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/google/uuid"
 )
 
@@ -35,10 +34,7 @@ func main() {
 		DisableStartupMessage: true,
 	})
 
-	// Built-in middleware
-	fiberApp.Use(recover.New())
-
-	// Setup routes (includes custom middleware)
+	// Setup routes (includes global middleware in correct order)
 	app.Router.Setup(fiberApp)
 
 	// Start server in goroutine
