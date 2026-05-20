@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize app: %v", err))
 	}
-	defer app.Logger.Sync()
+	defer func() { _ = app.Logger.Sync() }()
 
 	logger := app.Logger.With(log.String("component", "main"))
 

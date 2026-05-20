@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"errors"
+
 	"github.com/glennprays/golang-clean-arch-starter/internal/apperror"
 	"github.com/glennprays/golang-clean-arch-starter/internal/httperror"
 	"github.com/glennprays/log"
@@ -59,8 +61,10 @@ func ErrorHandler(logger *log.Logger) fiber.ErrorHandler {
 
 		// 2. Fiber's own errors (404, 405, etc.) — pass status through,
 		// translate the status to a Kind so the response shape stays
-		// consistent.
-		if fe, ok := err.(*fiber.Error); ok {
+		// consistent. errors.As (not a type assertion) so wrapped fiber
+		// errors still match.
+		var fe *fiber.Error
+		if errors.As(err, &fe) {
 			return writeError(c, fe.Code, traceID, &httperror.ErrorBody{
 				Code:    fiberKind(fe.Code),
 				Message: fe.Message,

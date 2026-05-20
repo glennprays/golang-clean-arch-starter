@@ -58,22 +58,24 @@ func fromValidationError(err error) *apperror.Error {
 	if !errors.As(err, &ve) {
 		return apperror.BadRequest(err.Error())
 	}
-	out := apperror.Validation("request validation failed")
+	details := make([]apperror.FieldError, 0, len(ve))
 	for _, fe := range ve {
-		out.WithDetails(apperror.FieldError{
+		details = append(details, apperror.FieldError{
 			Field:   strings.ToLower(stripRootNamespace(fe.Namespace())),
 			Rule:    fe.Tag(),
 			Message: ruleMessage(fe),
 		})
 	}
+	out := apperror.Validation("request validation failed")
+	out.Details = details
 	return out
 }
 
 // stripRootNamespace removes the top-level struct name from a
 // validator namespace, e.g. "CreateUserDTO.email" -> "email".
 func stripRootNamespace(ns string) string {
-	if i := strings.Index(ns, "."); i >= 0 {
-		return ns[i+1:]
+	if _, rest, ok := strings.Cut(ns, "."); ok {
+		return rest
 	}
 	return ns
 }
