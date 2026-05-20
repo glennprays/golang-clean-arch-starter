@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,7 +15,6 @@ import (
 	"github.com/glennprays/golang-clean-arch-starter/internal/middleware"
 	"github.com/glennprays/log"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/google/uuid"
 )
 
@@ -24,21 +25,25 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize app: %v", err))
 	}
-	defer app.Logger.Sync()
+	defer func() { _ = app.Logger.Sync() }()
 
 	logger := app.Logger.With(log.String("component", "main"))
 
-	// Create Fiber app with custom error handler
+	// Create Fiber app with custom error handler and explicit limits.
+	// Defaults (15s/15s read/write, 4 MiB body) are not appropriate for
+	// production — slow clients can tie up connections and large bodies
+	// reach handlers without backpressure.
 	fiberApp := fiber.New(fiber.Config{
 		AppName:               app.Config.AppName,
-		ErrorHandler:          middleware.ErrorHandler(),
+		ErrorHandler:          middleware.ErrorHandler(app.Logger),
 		DisableStartupMessage: true,
+		ReadTimeout:           10 * time.Second,
+		WriteTimeout:          10 * time.Second,
+		IdleTimeout:           120 * time.Second,
+		BodyLimit:             1 << 20, // 1 MiB
 	})
 
-	// Built-in middleware
-	fiberApp.Use(recover.New())
-
-	// Setup routes (includes custom middleware)
+	// Setup routes (includes global middleware in correct order)
 	app.Router.Setup(fiberApp)
 
 	// Start server in goroutine
@@ -49,7 +54,7 @@ func main() {
 			"app_name": app.Config.AppName,
 			"pid":      os.Getpid(),
 		})
-		if err := fiberApp.Listen(addr); err != nil {
+		if err := fiberApp.Listen(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Fatal(lifecycleID, "Failed to start server", map[string]any{
 				"error": err.Error(),
 			})
@@ -68,10 +73,10 @@ func main() {
 	if app.Config.Env == config.DEV {
 		timeoutSeconds = 0 // No timeout in dev for easier debugging
 	}
-	_, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
 	defer cancel()
 
-	if err := fiberApp.Shutdown(); err != nil {
+	if err := fiberApp.ShutdownWithContext(ctx); err != nil {
 		logger.Fatal(lifecycleID, "Server forced to shutdown", map[string]any{
 			"error": err.Error(),
 		})

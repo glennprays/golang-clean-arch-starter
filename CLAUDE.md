@@ -34,45 +34,57 @@ go generate ./internal/infrastructure/...
 
 ```
 cmd/api/main.go           # Entry point, Fiber server
+config/                   # Configuration loading (Viper + struct tags)
 internal/
-├── config/               # Configuration loading
-├── domain/               # Core entities & errors (innermost)
+├── apperror/             # Typed application error model (Kind + helpers)
+├── domain/               # Core entities & value objects (innermost)
 ├── usecase/              # Application business rules
 ├── service/              # Reusable business logic
 ├── repository/           # Data access layer
 ├── handler/              # HTTP handlers (Fiber)
-├── middleware/           # HTTP middleware
+├── middleware/           # HTTP middleware (TraceID, recover, CORS, logger, error handler)
 ├── router/               # Route definitions
-├── httperror/            # HTTP error conversion
-├── infrastructure/       # Wire DI, external configs
+├── httperror/            # JSON contract for error responses (ErrorResponse/ErrorBody)
+├── infrastructure/       # Wire DI, App struct
 ├── utils/                # Helper utilities
 └── worker/               # Background jobs
+pkg/
+├── logger/               # Logger provider (wraps glennprays/log)
+└── logctx/               # Trace ID propagation through context.Context
 ```
 
 ### Dependency Rule
 
 Dependencies point inward:
 - `domain` → no dependencies on other layers
-- `usecase/service` → can import `domain`
-- `repository` → can import `domain`
-- `handler` → can import `usecase`, `service`, `domain`
+- `apperror` → no dependencies on other layers (used everywhere errors cross a boundary)
+- `usecase/service` → can import `domain`, `apperror`
+- `repository` → can import `domain`, `apperror`
+- `handler` → can import `usecase`, `service`, `domain`, `apperror`
 
 ### Key Components
 
-**Domain** (`internal/domain/`):
-- Error types: `ErrBadRequest`, `ErrNotFound`, `ErrUnauthorized`, `ErrForbidden`, `ErrConflict`, `ErrInternalFailure`
-- Use `domain.NewError(serviceErr, appErr)` for domain errors
+**Application errors** (`internal/apperror/`):
+- One `*apperror.Error` carries `Kind`, `Message`, optional `Cause` (logged, never sent to clients), optional `Details` (validation).
+- Constructors: `apperror.NotFoundf(...)`, `apperror.BadRequest(...)`, `apperror.Internal(...).Wrap(err)`, etc.
+- Sentinels for `errors.Is`: `apperror.ErrNotFound`, `apperror.ErrConflict`, ... — match by `Kind`.
+- Design parallels `k8s.io/apimachinery/pkg/api/errors` and `gocloud.dev/gcerrors`.
 
 **Infrastructure** (`internal/infrastructure/`):
 - `app.go` - App struct holding dependencies
 - `wire.go` / `wire_gen.go` - Wire DI configuration
 
-**Error Handling**:
-- `httperror.FromError()` converts domain errors to HTTP status codes
+**Error handling flow**:
+- Usecases/services/handlers return `*apperror.Error` (often via the per-kind constructors).
+- `middleware.ErrorHandler` (Fiber global handler) maps the error to a typed `httperror.ErrorResponse` with `code`, `message`, `trace_id`, and optional `details`. 5xx and unmapped errors are logged before the response.
+
+**Trace ID propagation**:
+- `middleware.TraceID` generates/validates a UUID per request and stores it in both `c.Locals` (Fiber) and `c.UserContext()` (Go context).
+- Downstream code calls `logctx.TraceID(ctx)` to retrieve it for log correlation.
 
 ### API Endpoints
 
-- `GET /health` - Health check
+- `GET /api/v1/health` - Health check
 
 ### Development Environment
 

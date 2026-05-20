@@ -1,6 +1,6 @@
 
 # Stage 1: Build the Go application
-FROM golang:1.24 AS builder
+FROM golang:1.25 AS builder
 
 # Set the current working directory inside the container
 WORKDIR /app
@@ -11,14 +11,22 @@ COPY go.mod go.sum ./
 # Download all the dependencies
 RUN go mod download
 
-# Copy the source code (except the template directory)
+# Copy the source code
 COPY . .
 
-# Delete the template directory from the builder stage to prevent it from being compiled
-RUN rm -rf /app/template
+# Build metadata, passed in by the CI workflow / local `docker build`.
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
 
-# Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/main ./cmd/api/main.go
+# Build the Go application with version info baked in via -ldflags.
+# -s -w strips DWARF/symbol tables for a smaller production binary.
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags "-s -w \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Version=${VERSION} \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Commit=${COMMIT} \
+      -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.BuildTime=${BUILD_TIME}" \
+    -o /app/main ./cmd/api/main.go
 
 # Stage 2: Prepare CA certificates and timezone data
 FROM debian:bullseye-slim AS certs-and-tzdata
@@ -31,9 +39,6 @@ FROM scratch
 
 # Copy the compiled Go binary from the build stage
 COPY --from=builder /app/main /main
-
-# Copy the template directory from the context to the final image
-COPY template /template
 
 # Copy CA certificates from the certs stage
 

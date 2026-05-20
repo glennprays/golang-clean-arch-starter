@@ -4,6 +4,15 @@ RENAME_MODULE_TO=
 # detect OS
 UNAME_S := $(shell uname -s)
 
+# Build metadata baked in via -ldflags. Override with VERSION=x.y.z make build.
+VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo dev)
+COMMIT     ?= $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
+BUILD_TIME ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS    := -s -w \
+  -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Version=$(VERSION) \
+  -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.Commit=$(COMMIT) \
+  -X github.com/glennprays/golang-clean-arch-starter/pkg/buildinfo.BuildTime=$(BUILD_TIME)
+
 rename:
 	@if [ -z "$(RENAME_MODULE_TO)" ]; then \
 		echo "Please provide RENAME_MODULE_TO, e.g., make rename RENAME_MODULE_TO=github.com/yourname/yourproject"; \
@@ -36,3 +45,21 @@ generate:
 
 run:
 	@go run cmd/api/main.go
+
+dev:
+	@air -c .air.toml
+
+build:
+	@go build -ldflags "$(LDFLAGS)" -o ./tmp/main ./cmd/api
+
+hooks:
+	@lefthook install
+
+test:
+	@go test ./... -race -count=1
+
+lint:
+	@golangci-lint run ./...
+
+tidy:
+	@go mod tidy
