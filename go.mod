@@ -6,7 +6,7 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/glennprays/log v0.2.0
 	github.com/go-playground/validator/v10 v10.30.2
-	github.com/gofiber/fiber/v2 v2.52.10
+	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.7.0
 	github.com/joho/godotenv v1.5.1
